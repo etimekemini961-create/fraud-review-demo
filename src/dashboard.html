@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fraud Review Dashboard</title>
+  <style>
+    :root { font-family: "Segoe UI", Arial, sans-serif; color: #f5f1e6; background: #090909; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; background: radial-gradient(ellipse at 15% 0%, #30250c 0, transparent 38%), linear-gradient(145deg, #090909, #11100d 65%, #080808); }
+    main { width: min(1200px, calc(100% - 36px)); margin: 0 auto; padding: 42px 0; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+    .brand { display: flex; align-items: center; gap: 16px; }
+    .brand-mark { display: grid; width: 52px; height: 52px; place-items: center; border: 1px solid #d4af37; border-radius: 15px; color: #f1cc63; font-weight: 800; background: linear-gradient(145deg, #2b230f, #12110d); }
+    h1 { margin: 0 0 7px; font-size: clamp(28px, 5vw, 42px); }
+    .subtitle { margin: 0; color: #b9b09c; }
+    .status { padding: 9px 14px; border: 1px solid #66521b; border-radius: 999px; background: #211b0d; color: #f1cc63; font-size: 14px; white-space: nowrap; }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .card, .panel { border: 1px solid #332b18; border-radius: 18px; background: rgb(20 19 16 / 94%); box-shadow: 0 16px 45px rgb(0 0 0 / 32%); }
+    .card { padding: 20px; }
+    .card-label { color: #b9b09c; font-size: 14px; }
+    .card-value { margin-top: 9px; color: #e6c45a; font-size: 30px; font-weight: 700; overflow-wrap: anywhere; }
+    .panel { overflow: hidden; margin-bottom: 20px; }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 22px; border-bottom: 1px solid #332b18; }
+    .panel-heading h2 { margin: 0; font-size: 19px; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 20px 22px; }
+    label { display: grid; gap: 8px; color: #d4af37; font-size: 13px; font-weight: 650; }
+    input, select, textarea { width: 100%; border: 1px solid #514322; border-radius: 10px; padding: 11px 12px; outline: none; background: #0d0d0c; color: #f5f1e6; font: inherit; }
+    input:focus, select:focus, textarea:focus { border-color: #d4af37; box-shadow: 0 0 0 3px rgb(212 175 55 / 15%); }
+    button { border: 1px solid #e0bd4f; border-radius: 10px; padding: 11px 15px; background: #d4af37; color: #171307; font-weight: 700; cursor: pointer; }
+    button:hover { background: #f1cc63; }
+    button:disabled { cursor: wait; opacity: .65; }
+    .form-action { display: flex; align-items: end; }
+    .form-action button { width: 100%; }
+    .form-message { min-height: 22px; margin: 0; padding: 0 22px 18px; color: #e6c45a; }
+    .form-message.error, .review-message.error { color: #ffb4a8; }
+    .refresh { padding: 9px 14px; }
+    .header-actions select { width: auto; min-width: 140px; }
+    .key-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; align-items: end; padding: 18px 22px; }
+    .key-help { margin: 0; padding: 0 22px 18px; color: #b9b09c; font-size: 13px; }
+    .key-state { color: #e6c45a; font-size: 13px; padding-bottom: 12px; }
+    .table-wrap { overflow-x: auto; }
+    .download { border: 1px solid #e0bd4f; border-radius: 10px; padding: 9px 14px; background: #d4af37; color: #171307; font-weight: 700; text-decoration: none; }
+    .download:hover { background: #f1cc63; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 14px 16px; border-bottom: 1px solid #28241a; vertical-align: top; }
+    th { color: #d4af37; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    td { color: #eee8d8; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .review-controls { display: grid; min-width: 230px; gap: 8px; }
+    .review-controls select { padding: 9px; }
+    .review-controls textarea { min-height: 62px; resize: vertical; font-size: 13px; }
+    .review-message { min-height: 16px; color: #e6c45a; font-size: 12px; }
+    .message { padding: 24px 18px; color: #b9b09c; text-align: center; }
+    @media (max-width: 800px) { .cards { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .cards, .form-grid { grid-template-columns: 1fr; }
+      .panel-heading { align-items: flex-start; flex-direction: column; }
+      .header-actions { width: 100%; }
+      .header-actions select { flex: 1; }
+      .key-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">
+      <div class="brand-mark">FR</div>
+      <div><h1>Fraud Review</h1><p class="subtitle">Transaction patterns for human review</p></div>
+    </div>
+    <div class="status" id="status">Connecting to local API…</div>
+  </header>
+
+  <section class="cards" aria-label="Summary">
+    <article class="card"><div class="card-label">Alerts</div><div class="card-value" id="alert-count">—</div></article>
+    <article class="card"><div class="card-label">Receivers to review</div><div class="card-value" id="receiver-count">—</div></article>
+    <article class="card"><div class="card-label">Transactions stored</div><div class="card-value" id="transaction-count">—</div></article>
+    <article class="card"><div class="card-label">Amount in flagged windows</div><div class="card-value" id="total-amount">—</div></article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><h2>Add a transaction</h2></div>
+    <form id="transaction-form" class="form-grid">
+      <label>Sender ID<input id="sender" required maxlength="80" placeholder="Example: A106"></label>
+      <label>Receiver ID<input id="receiver" required maxlength="80" placeholder="Example: X900"></label>
+      <label>Amount<input id="amount" type="number" min="0.01" step="0.01" required></label>
+      <label>Date and time<input id="timestamp" type="datetime-local" required></label>
+      <div class="form-action"><button type="submit">Submit transaction</button></div>
+    </form>
+    <p class="form-message" id="form-message" role="status"></p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <h2>Review alerts</h2>
+      <div class="header-actions">
+        <select id="alert-filter" aria-label="Filter alerts by review status">
+          <option value="all">All statuses</option><option value="open">Open</option>
+          <option value="escalated">Escalated</option><option value="cleared">Cleared</option>
+        </select>
+        <button class="refresh" id="refresh-button" type="button">Refresh</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Receiver</th><th>Senders</th><th>Sender IDs</th><th>Total</th><th>Window</th><th>Review decision and note</th></tr></thead>
+      <tbody id="alerts-body"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><h2>Recent transactions</h2></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Sender</th><th>Receiver</th><th>Amount</th><th>Timestamp</th></tr></thead>
+      <tbody id="transactions-body"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><h2>Review history</h2><a class="download" href="/alerts/review-history.csv">Download CSV</a></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Receiver</th><th>Alert window</th><th>Previous status</th><th>New status</th><th>Note</th><th>Saved at</th></tr></thead>
+      <tbody id="review-history-body"></tbody>
+    </table></div>
+  </section>
+</main>
+<script>
+  const statusBadge = document.getElementById("status");
+  const alertsBody = document.getElementById("alerts-body");
+  const transactionsBody = document.getElementById("transactions-body");
+  const reviewHistoryBody = document.getElementById("review-history-body");
+  const formMessage = document.getElementById("form-message");
+  let currentAlerts = [];
+
+  function addCell(row, value) {
+    const cell = document.createElement("td");
+    cell.textContent = value ?? "";
+    row.appendChild(cell);
+    return cell;
+  }
+
+  function showEmptyRow(tableBody, columnCount, message) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = columnCount;
+    cell.className = "message";
+    cell.textContent = message;
+    row.appendChild(cell);
+    tableBody.appendChild(row);
+  }
+
+  async function readResponse(response, fallback) {
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = Array.isArray(result.detail) ? "Check the fields and try again." : (result.detail || fallback);
+      throw new Error(detail);
+    }
+    return result;
+  }
+
+  function createReviewControls(alertRecord) {
+    const cell = document.createElement("td");
+    const controls = document.createElement("div");
+    controls.className = "review-controls";
+    const statusSelect = document.createElement("select");
+    statusSelect.setAttribute("aria-label", "Review status");
+    for (const entry of [["open", "Open"], ["escalated", "Escalated"], ["cleared", "Cleared"]]) {
+      const option = document.createElement("option");
+      option.value = entry[0];
+      option.textContent = entry[1];
+      statusSelect.appendChild(option);
+    }
+    statusSelect.value = alertRecord.review_status || "open";
+
+    const noteInput = document.createElement("textarea");
+    noteInput.maxLength = 1000;
+    noteInput.placeholder = "Add a reviewer note";
+    noteInput.value = alertRecord.review_note || "";
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "button";
+    saveButton.textContent = "Save review";
+    const message = document.createElement("div");
+    message.className = "review-message";
+    message.setAttribute("role", "status");
+
+    saveButton.addEventListener("click", async () => {
+      saveButton.disabled = true;
+      message.className = "review-message";
+      message.textContent = "Saving…";
+      try {
+        const response = await fetch("/alerts/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            receiver: alertRecord.receiver,
+            window_start: alertRecord.window_start,
+            window_end: alertRecord.window_end,
+            status: statusSelect.value,
+            note: noteInput.value
+          })
+        });
+        await readResponse(response, "Could not save this review.");
+        message.textContent = "Review saved.";
+        alertRecord.review_status = statusSelect.value;
+        alertRecord.review_note = noteInput.value;
+        await loadReviewHistory();
+      } catch (error) {
+        message.className = "review-message error";
+        message.textContent = error.message;
+      } finally {
+        saveButton.disabled = false;
+      }
+    });
+
+    controls.append(statusSelect, noteInput, saveButton, message);
+    cell.appendChild(controls);
+    return cell;
+  }
+
+  function renderAlerts() {
+    const filter = document.getElementById("alert-filter").value;
+    const visibleAlerts = currentAlerts.filter(alert => filter === "all" || (alert.review_status || "open") === filter);
+    alertsBody.replaceChildren();
+    if (visibleAlerts.length === 0) {
+      showEmptyRow(alertsBody, 6, currentAlerts.length === 0 ? "No alerts to review." : "No " + filter + " alerts.");
+      return;
+    }
+    for (const alert of visibleAlerts) {
+      const row = document.createElement("tr");
+      addCell(row, alert.receiver);
+      addCell(row, String(alert.sender_count));
+      addCell(row, alert.sender_list);
+      addCell(row, alert.total_amount);
+      addCell(row, alert.window_start + " – " + alert.window_end);
+      row.appendChild(createReviewControls(alert));
+      alertsBody.appendChild(row);
+    }
+  }
+
+  function renderReviewHistory(records) {
+    reviewHistoryBody.replaceChildren();
+    if (records.length === 0) {
+      showEmptyRow(reviewHistoryBody, 6, "No review history recorded yet.");
+      return;
+    }
+    for (const record of records) {
+      const row = document.createElement("tr");
+      addCell(row, record.receiver);
+      addCell(row, record.window_start + " – " + record.window_end);
+      addCell(row, record.previous_status);
+      addCell(row, record.status);
+      addCell(row, record.note);
+      addCell(row, record.updated_at);
+      reviewHistoryBody.appendChild(row);
+    }
+  }
+
+  async function loadReviewHistory() {
+    const response = await fetch("/alerts/review-history");
+    const records = await readResponse(response, "Could not load review history.");
+    renderReviewHistory(records);
+  }
+
+  async function loadDashboard() {
+    statusBadge.textContent = "Connecting to local API…";
+    try {
+      const responses = await Promise.all([
+        fetch("/alerts"), fetch("/transactions"), fetch("/alerts/review-history")
+      ]);
+      const alerts = await readResponse(responses[0], "Could not load alerts.");
+      const transactions = await readResponse(responses[1], "Could not load transactions.");
+      const history = await readResponse(responses[2], "Could not load review history.");
+      currentAlerts = alerts;
+
+      const receivers = new Set(currentAlerts.map(alert => alert.receiver));
+      const total = currentAlerts.reduce((sum, alert) => sum + Number(alert.total_amount), 0);
+      document.getElementById("alert-count").textContent = currentAlerts.length;
+      document.getElementById("receiver-count").textContent = receivers.size;
+      document.getElementById("transaction-count").textContent = transactions.length;
+      document.getElementById("total-amount").textContent = total.toFixed(2);
+
+      renderAlerts();
+      renderReviewHistory(history);
+      transactionsBody.replaceChildren();
+      if (transactions.length === 0) {
+        showEmptyRow(transactionsBody, 5, "No transactions stored.");
+      } else {
+        for (const transaction of transactions) {
+          const row = document.createElement("tr");
+          addCell(row, String(transaction.id));
+          addCell(row, transaction.sender);
+          addCell(row, transaction.receiver);
+          addCell(row, Number(transaction.amount).toFixed(2));
+          addCell(row, transaction.timestamp);
+          transactionsBody.appendChild(row);
+        }
+      }
+      statusBadge.textContent = "Local API connected";
+    } catch (error) {
+      statusBadge.textContent = "API unavailable";
+      currentAlerts = [];
+      alertsBody.replaceChildren();
+      transactionsBody.replaceChildren();
+      reviewHistoryBody.replaceChildren();
+      showEmptyRow(alertsBody, 6, error.message);
+    }
+  }
+
+  document.getElementById("transaction-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    formMessage.className = "form-message";
+    formMessage.textContent = "Saving transaction…";
+    const transaction = {
+      sender: document.getElementById("sender").value.trim(),
+      receiver: document.getElementById("receiver").value.trim(),
+      amount: Number(document.getElementById("amount").value),
+      timestamp: document.getElementById("timestamp").value
+    };
+    try {
+      const response = await fetch("/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(transaction)
+      });
+      const result = await readResponse(response, "The transaction could not be saved.");
+      formMessage.textContent = "Saved transaction #" + result.transaction_id + ". " + result.alert_count + " alert(s) now found.";
+      document.getElementById("transaction-form").reset();
+      await loadDashboard();
+    } catch (error) {
+      formMessage.className = "form-message error";
+      formMessage.textContent = error.message;
+    }
+  });
+
+  document.getElementById("refresh-button").addEventListener("click", loadDashboard);
+  document.getElementById("alert-filter").addEventListener("change", renderAlerts);
+  loadDashboard();
+</script>
+</body>
+</html>
+
+
