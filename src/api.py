@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import io
+import os
 import sqlite3
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ alerts_csv_path = project_folder / "alerts.csv"
 dashboard_path = Path(__file__).resolve().parent / "dashboard.html"
 
 app = FastAPI(title="Fraud Review Demo API")
+READ_ONLY_MODE = os.environ.get("DEMO_READ_ONLY", "false").strip().lower() in {"1", "true", "yes"}
 
 def alert_key_for(receiver: str, window_start: str, window_end: str) -> str:
     value = f"{receiver}|{window_start}|{window_end}"
@@ -93,7 +95,7 @@ def dashboard():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "read_only": READ_ONLY_MODE}
 
 
 @app.get("/alerts")
@@ -252,6 +254,8 @@ def refresh_alerts(connection: sqlite3.Connection):
 
 @app.post("/transactions", status_code=201)
 def add_transaction(transaction: TransactionInput):
+    if READ_ONLY_MODE:
+        raise HTTPException(status_code=403, detail="This portfolio demo is read-only.")
     sender = transaction.sender.strip()
     receiver = transaction.receiver.strip()
 
@@ -286,6 +290,8 @@ def add_transaction(transaction: TransactionInput):
 
 @app.post("/alerts/review")
 def save_alert_review(review: AlertReviewInput):
+    if READ_ONLY_MODE:
+        raise HTTPException(status_code=403, detail="This portfolio demo is read-only.")
     receiver = review.receiver.strip()
     window_start = review.window_start.isoformat()
     window_end = review.window_end.isoformat()
@@ -353,6 +359,8 @@ def save_alert_review(review: AlertReviewInput):
         "status": review.status,
         "alert_key": key,
     }
+
+
 
 
 

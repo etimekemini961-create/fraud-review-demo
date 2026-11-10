@@ -86,8 +86,22 @@ Interactive API documentation is available at:
 
 transactions.csv is input data. alerts.csv and fraud_demo.db are generated or updated by the program.
 
+## Deploy a read-only portfolio demo
+
+The public demo supports viewing synthetic alerts and transactions. Transaction submission and review decisions are disabled when the DEMO_READ_ONLY environment variable is set to true.
+
+For a Render Web Service, use these settings:
+
+- Runtime: Python 3
+- Build command: pip install -r requirements.txt
+- Start command: python src/main.py && uvicorn api:app --app-dir src --host 0.0.0.0 --port $PORT
+- Environment variable: DEMO_READ_ONLY=true
+
+Leave the Root Directory blank so these commands run from the project root. Render currently provides Python 3.14 for its native Python runtime; this project’s code is also developed locally with Python 3.15. The start command runs main.py to seed the SQLite database from the synthetic transactions.csv file whenever the service starts. The hosted demo is read-only because free Render services use an ephemeral filesystem and local database changes can disappear after a restart.
+
+Render creates the public onrender.com URL after deployment finishes. Free services may sleep when idle and take time to wake up.
+
 ## Data and security
 
-Use synthetic data only. Do not put real customer, bank, or payment information into this demo.
+Use synthetic data only. Do not put real customer, bank, or payment information into this demo. The public portfolio mode is read-only, but this is still a prototype and is not designed for production use.
 
-The API currently runs on 127.0.0.1, which makes it available on the same computer. Do not change the host to 0.0.0.0 or publish this app online until proper authentication, access controls, and secure deployment settings have been added.
