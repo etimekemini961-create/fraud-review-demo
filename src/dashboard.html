@@ -37,9 +37,6 @@
     .form-message.error, .review-message.error { color: #ffb4a8; }
     .refresh { padding: 9px 14px; }
     .header-actions select { width: auto; min-width: 140px; }
-    .key-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; align-items: end; padding: 18px 22px; }
-    .key-help { margin: 0; padding: 0 22px 18px; color: #b9b09c; font-size: 13px; }
-    .key-state { color: #e6c45a; font-size: 13px; padding-bottom: 12px; }
     .table-wrap { overflow-x: auto; }
     .demo-banner { margin: 0 0 20px; padding: 14px 18px; border: 1px solid #66521b; border-radius: 12px; background: #211b0d; color: #f1cc63; }
     .demo-banner[hidden] { display: none; }
@@ -55,14 +52,20 @@
     .review-controls textarea { min-height: 62px; resize: vertical; font-size: 13px; }
     .review-message { min-height: 16px; color: #e6c45a; font-size: 12px; }
     .message { padding: 24px 18px; color: #b9b09c; text-align: center; }
-    @media (max-width: 800px) { .cards { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: repeat(2, 1fr); } }
+    .evidence-button { padding: 8px 11px; white-space: nowrap; }
+    .evidence-row td { background: #17150f; }
+    .evidence-note { margin: 0 0 12px; color: #b9b09c; font-size: 13px; }
+    .evidence-table th, .evidence-table td { padding: 9px 12px; }
+    @media (max-width: 800px) {
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 520px) {
       header { align-items: flex-start; flex-direction: column; }
       .cards, .form-grid { grid-template-columns: 1fr; }
       .panel-heading { align-items: flex-start; flex-direction: column; }
       .header-actions { width: 100%; }
       .header-actions select { flex: 1; }
-      .key-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -71,11 +74,17 @@
   <header>
     <div class="brand">
       <div class="brand-mark">FR</div>
-      <div><h1>Fraud Review</h1><p class="subtitle">Transaction patterns for human review</p></div>
+      <div>
+        <h1>Fraud Review</h1>
+        <p class="subtitle">Transaction patterns for human review</p>
+      </div>
     </div>
     <div class="status" id="status">Connecting to local API…</div>
   </header>
-  <div id="read-only-notice" class="demo-banner" hidden>Public portfolio view: synthetic sample data only. Editing and review actions are disabled.</div>
+
+  <div id="read-only-notice" class="demo-banner" hidden>
+    Public portfolio view: synthetic sample data only. Editing and review actions are disabled.
+  </div>
 
   <section class="cards" aria-label="Summary">
     <article class="card"><div class="card-label">Alerts</div><div class="card-value" id="alert-count">—</div></article>
@@ -101,34 +110,53 @@
       <h2>Review alerts</h2>
       <div class="header-actions">
         <select id="alert-filter" aria-label="Filter alerts by review status">
-          <option value="all">All statuses</option><option value="open">Open</option>
-          <option value="escalated">Escalated</option><option value="cleared">Cleared</option>
+          <option value="all">All statuses</option>
+          <option value="open">Open</option>
+          <option value="escalated">Escalated</option>
+          <option value="cleared">Cleared</option>
         </select>
         <button class="refresh" id="refresh-button" type="button">Refresh</button>
       </div>
     </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Receiver</th><th>Senders</th><th>Sender IDs</th><th>Total</th><th>Window</th><th>Review decision and note</th></tr></thead>
-      <tbody id="alerts-body"></tbody>
-    </table></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Receiver</th><th>Senders</th><th>Sender IDs</th><th>Total</th>
+            <th>Window</th><th>Evidence</th><th>Review decision and note</th>
+          </tr>
+        </thead>
+        <tbody id="alerts-body"></tbody>
+      </table>
+    </div>
   </section>
 
   <section class="panel">
     <div class="panel-heading"><h2>Recent transactions</h2></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>ID</th><th>Sender</th><th>Receiver</th><th>Amount</th><th>Timestamp</th></tr></thead>
-      <tbody id="transactions-body"></tbody>
-    </table></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Sender</th><th>Receiver</th><th>Amount</th><th>Timestamp</th></tr></thead>
+        <tbody id="transactions-body"></tbody>
+      </table>
+    </div>
   </section>
 
   <section class="panel">
-    <div class="panel-heading"><h2>Review history</h2><a class="download" href="/alerts/review-history.csv">Download CSV</a></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Receiver</th><th>Alert window</th><th>Previous status</th><th>New status</th><th>Note</th><th>Saved at</th></tr></thead>
-      <tbody id="review-history-body"></tbody>
-    </table></div>
+    <div class="panel-heading">
+      <h2>Review history</h2>
+      <a class="download" href="/alerts/review-history.csv">Download CSV</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Receiver</th><th>Alert window</th><th>Previous status</th><th>New status</th><th>Note</th><th>Saved at</th></tr>
+        </thead>
+        <tbody id="review-history-body"></tbody>
+      </table>
+    </div>
   </section>
 </main>
+
 <script>
   const statusBadge = document.getElementById("status");
   const alertsBody = document.getElementById("alerts-body");
@@ -136,6 +164,7 @@
   const reviewHistoryBody = document.getElementById("review-history-body");
   const formMessage = document.getElementById("form-message");
   let currentAlerts = [];
+  let currentTransactions = [];
   let readOnlyMode = false;
 
   function addCell(row, value) {
@@ -158,16 +187,97 @@
   async function readResponse(response, fallback) {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const detail = Array.isArray(result.detail) ? "Check the fields and try again." : (result.detail || fallback);
+      const detail = Array.isArray(result.detail)
+        ? "Check the fields and try again."
+        : (result.detail || fallback);
       throw new Error(detail);
     }
     return result;
+  }
+
+  function showEvidence(alertRecord, button, alertRow) {
+    const existingRow = alertRow.nextElementSibling;
+    if (existingRow && existingRow.classList.contains("evidence-row")) {
+      existingRow.remove();
+      button.textContent = "Show evidence";
+      button.setAttribute("aria-expanded", "false");
+      return;
+    }
+
+    const evidenceRow = document.createElement("tr");
+    evidenceRow.className = "evidence-row";
+    const cell = document.createElement("td");
+    cell.colSpan = 7;
+
+    const note = document.createElement("p");
+    note.className = "evidence-note";
+    note.textContent = "These transactions match this alert’s receiver and time window. An alert is a review signal, not proof of fraud.";
+    cell.appendChild(note);
+
+    const start = Date.parse(alertRecord.window_start);
+    const end = Date.parse(alertRecord.window_end);
+    const matchingTransactions = currentTransactions.filter(transaction => {
+      const time = Date.parse(transaction.timestamp);
+      return transaction.receiver === alertRecord.receiver
+        && Number.isFinite(time)
+        && time >= start
+        && time <= end;
+    });
+
+    if (matchingTransactions.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "message";
+      empty.textContent = "No matching transactions were found in the transactions currently loaded.";
+      cell.appendChild(empty);
+    } else {
+      const table = document.createElement("table");
+      table.className = "evidence-table";
+      const head = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      for (const heading of ["ID", "Sender", "Amount", "Timestamp"]) {
+        const th = document.createElement("th");
+        th.textContent = heading;
+        headerRow.appendChild(th);
+      }
+      head.appendChild(headerRow);
+      table.appendChild(head);
+
+      const body = document.createElement("tbody");
+      for (const transaction of matchingTransactions) {
+        const row = document.createElement("tr");
+        addCell(row, String(transaction.id));
+        addCell(row, transaction.sender);
+        addCell(row, Number(transaction.amount).toFixed(2));
+        addCell(row, transaction.timestamp);
+        body.appendChild(row);
+      }
+      table.appendChild(body);
+      cell.appendChild(table);
+    }
+
+    evidenceRow.appendChild(cell);
+    alertRow.after(evidenceRow);
+    button.textContent = "Hide evidence";
+    button.setAttribute("aria-expanded", "true");
+  }
+
+  function createEvidenceButton(alertRecord, alertRow) {
+    const cell = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "evidence-button";
+    button.textContent = "Show evidence";
+    button.setAttribute("aria-expanded", "false");
+    button.addEventListener("click", () => showEvidence(alertRecord, button, alertRow));
+    cell.appendChild(button);
+    return cell;
   }
 
   function createReviewControls(alertRecord) {
     const cell = document.createElement("td");
     const controls = document.createElement("div");
     controls.className = "review-controls";
+
     const statusSelect = document.createElement("select");
     statusSelect.setAttribute("aria-label", "Review status");
     for (const entry of [["open", "Open"], ["escalated", "Escalated"], ["cleared", "Cleared"]]) {
@@ -186,6 +296,7 @@
     const saveButton = document.createElement("button");
     saveButton.type = "button";
     saveButton.textContent = "Save review";
+
     const message = document.createElement("div");
     message.className = "review-message";
     message.setAttribute("role", "status");
@@ -225,6 +336,7 @@
       saveButton.hidden = true;
       message.textContent = "Read-only portfolio view";
     }
+
     controls.append(statusSelect, noteInput, saveButton, message);
     cell.appendChild(controls);
     return cell;
@@ -232,12 +344,20 @@
 
   function renderAlerts() {
     const filter = document.getElementById("alert-filter").value;
-    const visibleAlerts = currentAlerts.filter(alert => filter === "all" || (alert.review_status || "open") === filter);
+    const visibleAlerts = currentAlerts.filter(alert =>
+      filter === "all" || (alert.review_status || "open") === filter
+    );
     alertsBody.replaceChildren();
+
     if (visibleAlerts.length === 0) {
-      showEmptyRow(alertsBody, 6, currentAlerts.length === 0 ? "No alerts to review." : "No " + filter + " alerts.");
+      showEmptyRow(
+        alertsBody,
+        7,
+        currentAlerts.length === 0 ? "No alerts to review." : "No " + filter + " alerts."
+      );
       return;
     }
+
     for (const alert of visibleAlerts) {
       const row = document.createElement("tr");
       addCell(row, alert.receiver);
@@ -245,6 +365,7 @@
       addCell(row, alert.sender_list);
       addCell(row, alert.total_amount);
       addCell(row, alert.window_start + " – " + alert.window_end);
+      row.appendChild(createEvidenceButton(alert, row));
       row.appendChild(createReviewControls(alert));
       alertsBody.appendChild(row);
     }
@@ -282,28 +403,31 @@
       readOnlyMode = Boolean(health.read_only);
       document.getElementById("read-only-notice").hidden = !readOnlyMode;
       document.getElementById("transaction-panel").hidden = readOnlyMode;
+
       const responses = await Promise.all([
-        fetch("/alerts"), fetch("/transactions"), fetch("/alerts/review-history")
+        fetch("/alerts"),
+        fetch("/transactions"),
+        fetch("/alerts/review-history")
       ]);
-      const alerts = await readResponse(responses[0], "Could not load alerts.");
-      const transactions = await readResponse(responses[1], "Could not load transactions.");
+      currentAlerts = await readResponse(responses[0], "Could not load alerts.");
+      currentTransactions = await readResponse(responses[1], "Could not load transactions.");
       const history = await readResponse(responses[2], "Could not load review history.");
-      currentAlerts = alerts;
 
       const receivers = new Set(currentAlerts.map(alert => alert.receiver));
       const total = currentAlerts.reduce((sum, alert) => sum + Number(alert.total_amount), 0);
       document.getElementById("alert-count").textContent = currentAlerts.length;
       document.getElementById("receiver-count").textContent = receivers.size;
-      document.getElementById("transaction-count").textContent = transactions.length;
+      document.getElementById("transaction-count").textContent = currentTransactions.length;
       document.getElementById("total-amount").textContent = total.toFixed(2);
 
       renderAlerts();
       renderReviewHistory(history);
       transactionsBody.replaceChildren();
-      if (transactions.length === 0) {
+
+      if (currentTransactions.length === 0) {
         showEmptyRow(transactionsBody, 5, "No transactions stored.");
       } else {
-        for (const transaction of transactions) {
+        for (const transaction of currentTransactions) {
           const row = document.createElement("tr");
           addCell(row, String(transaction.id));
           addCell(row, transaction.sender);
@@ -313,14 +437,16 @@
           transactionsBody.appendChild(row);
         }
       }
+
       statusBadge.textContent = readOnlyMode ? "Read-only portfolio demo" : "Local API connected";
     } catch (error) {
       statusBadge.textContent = "API unavailable";
       currentAlerts = [];
+      currentTransactions = [];
       alertsBody.replaceChildren();
       transactionsBody.replaceChildren();
       reviewHistoryBody.replaceChildren();
-      showEmptyRow(alertsBody, 6, error.message);
+      showEmptyRow(alertsBody, 7, error.message);
     }
   }
 
@@ -328,12 +454,14 @@
     event.preventDefault();
     formMessage.className = "form-message";
     formMessage.textContent = "Saving transaction…";
+
     const transaction = {
       sender: document.getElementById("sender").value.trim(),
       receiver: document.getElementById("receiver").value.trim(),
       amount: Number(document.getElementById("amount").value),
       timestamp: document.getElementById("timestamp").value
     };
+
     try {
       const response = await fetch("/transactions", {
         method: "POST",
@@ -341,7 +469,9 @@
         body: JSON.stringify(transaction)
       });
       const result = await readResponse(response, "The transaction could not be saved.");
-      formMessage.textContent = "Saved transaction #" + result.transaction_id + ". " + result.alert_count + " alert(s) now found.";
+      formMessage.textContent =
+        "Saved transaction #" + result.transaction_id + ". " +
+        result.alert_count + " alert(s) now found.";
       document.getElementById("transaction-form").reset();
       await loadDashboard();
     } catch (error) {
@@ -356,7 +486,3 @@
 </script>
 </body>
 </html>
-
-
-
-
