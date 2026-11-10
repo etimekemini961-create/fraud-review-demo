@@ -1,7 +1,7 @@
 # Fraud Review Demo
 
 A small Python prototype that analyzes transaction records and presents possible patterns for human review. It includes a FastAPI API, a SQLite database, a black-and-gold web dashboard, and CSV exports.
-
+**Live demo:** https://fraud-review-demo.onrender.com/
 This is a learning and portfolio project. It uses synthetic sample data and is not a production fraud detection system. An alert is only a pattern that a person may review; it does not prove fraud.
 
 ## Features
