@@ -6,7 +6,7 @@ A small Python prototype that analyzes transaction records and presents possible
 This is a learning and portfolio project. It uses synthetic sample data and is not a production fraud detection system. An alert is only a pattern that a person may review; it does not prove fraud.
 
 ## Features
-
+- Shows the matching transactions behind each alert, including sender, amount, and timestamp.
 - Reads transactions from the file transactions.csv.
 - Checks whether a receiver gets transactions from at least three distinct senders within a 24-hour window.
 - Writes alert results to alerts.csv and stores transactions and alerts in fraud_demo.db.
