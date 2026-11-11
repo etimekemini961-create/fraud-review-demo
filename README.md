@@ -8,7 +8,7 @@ This is a learning and portfolio project. It uses synthetic sample data and is n
 ## Features
 - Shows the matching transactions behind each alert, including sender, amount, and timestamp.
 - Reads transactions from the file transactions.csv.
-- Checks whether a receiver gets transactions from at least three distinct senders within a 24-hour window.
+- Flags a receiver for human review when at least three distinct senders make payments within any 24-hour period. This pattern is a review signal, not proof of fraud.
 - Writes alert results to alerts.csv and stores transactions and alerts in fraud_demo.db.
 - Provides an API for listing transactions and alerts, and submitting transactions.
 - Lets a reviewer mark an alert open, escalated, or cleared and record a note.
